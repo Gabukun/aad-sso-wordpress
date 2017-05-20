@@ -1,3 +1,4 @@
+
 [![Stories in Ready](https://badge.waffle.io/psignoret/aad-sso-wordpress.png?label=ready&title=Ready)](https://waffle.io/psignoret/aad-sso-wordpress)
 # Sign Sign-on with Azure Active Directory (for WordPress)
 
@@ -29,19 +30,21 @@ This plugin is not yet registered in the WordPress plugin directory (coming soon
 
 1. Download the plugin using `git` or with the 'Download ZIP' link on the right.
 2. Place the `aad-sso-wordpress` folder in your WordPress' plugin folder. Normally, this is `<yourblog>/wp-content/plugins`.
+You can also import the ZIP file directly through the WordPress Admin Console by navigating to **Plugins** > **Add New** > **Upload ZIP file**.
 3. Activate the plugin in the WordPress admin console, under **Plugins** > **Installed Plugins**.
 
 ### 2. Register an Azure Active Directory application
 
 For these steps, you must have an Azure subscription with access to the Azure Active Directory tenant that you would like to use with your blog.
 
-1. Sign in to the [Azure portal](https://manage.windowsazure.com), and navigate to the **Active Directory** section. Choose the directory (tenant) that you would like to use. This should be the directory containing the users and (optionally) groups that will have access to your WordPress blog.
-3. Under the **Applications** tab, click **Add** to register a new application. Choose 'Add an application my organization is developing', and a recognizable name. Choose values for sign-in URL and app ID URL. The blog's URL is usually a good choice.
-4. When the app is created, under the **Configure** tab, generate a key (it will be visible once only, after you save). <br /> IMPORTANT: This value is a secret! You should never share this with anyone.
-5. Add a reply URL with the format: `https://<your blog url>/wp-login.php`, or whichever page your blog uses to sign in users. (Note: This page must invoke the `authenticate` action.)
-6. Grant the application permission to call Azure AD Graph API. This is done by adding permissions to Windows Azure Active Directory, and checking Delegated Permission to "Enable sign-on and read users' profile" and "Read directory data". (The latter is currently only needed if Azure AD group to WordPress role mapping is used.)
+1. Sign in to the [Azure portal](https://portal.azure.com), and navigate to the **Azure Active Directory** menu item in the left menu bar. Choose the directory (tenant) that you would like to use. This should be the directory containing the users and (optionally) groups that will have access to your WordPress blog.
+3. Open the **App Registrations** blade and click **New application registration** to register a new application. Choose a recognizable name, change the Application Type to Native, and type in a random (available) URI. The blog's URL is usually a good choice. (You can change the last setting later.) It is essential to select Application Type Native as the Web API approach does not allow to pass sufficient Azure AD user attributes to the WordPress user table to log in later.
+4. When the app is created, a new blade opens with an overview. On this page, you also find the application ID, also known as client ID. Take note of it.
+5. Click on ***All Settings*** and click on the Reply URL. Add a reply URL with the format: `http://<your blog url>/wp-login.php`, or whichever page your blog uses to sign in users. (Note: This page must invoke the `authenticate` action.)
+6. In the same blade, go to *** Web API*** and click on permission to define what actions your App can call on from the Azure AD Graph API. This is done by adding permissions to Windows Azure Active Directory, and checking Delegated Permission to "Enable sign-on and read users' profile" and "Read directory data". (The latter is currently only needed if Azure AD group to WordPress role mapping is used.)
    ![Application permissions to Azure AD Graph API](https://cloud.githubusercontent.com/assets/231140/6990496/fcf02fb0-da21-11e4-9d60-1e6e2fd2cef1.png)
-7. Save the application (and copy the secret key, which will appear after saving).
+7. In the same section, click on ***Keys*** to generate a client key (it will be visible once only, after you save). Take note of the client key. <br /> IMPORTANT: This value is a secret! You should never share this with anyone.
+8. Feel free to add Owners and a Logo to your app. This is not necessary, though
 
 ### 3. Configure the plugin
 
@@ -50,7 +53,7 @@ Once the plugin is activated, update your settings from the WordPress admin cons
 <dl>
   <dt>Display name</dt>
   <dd>
-    The display name of the organization, used only in the link in the login page.
+    The display name of the organization, which appears on the login page.
   </dd>
 
   <dt>Client ID</dt>
@@ -67,7 +70,13 @@ Once the plugin is activated, update your settings from the WordPress admin cons
   <dd>
     The URL that Azure AD will send the user to after authenticating. This is usually the blog's sign-in page, which is the default value.
   </dd>
-</dl>
+  <dt>Checkbox for User Provisioning</dt>
+
+  <dd>
+
+    If you do not intend to preconfigure new users in your WordPress user table, tick this checkbox. The integration will automatically pull user attributes from Azure AD to populate the standard fields in the user table. The Plugin will pull email handle without domain address as the user ID, first and last name, and private email address as email address. Take note that presently, Azure AD user attributes cannot be mapped to these standard fields and it is not possible to map the entire email address as user ID and the corporate email address to the WordPress data table.
+
+  </dd></dl>
 
 ### 4. (Optional) Set WordPress roles based on Azure AD group membership
 
@@ -172,3 +181,8 @@ Users are matched by their email in WordPress, and WordPress roles are dictated 
 ### Refreshing the OpenID Connect configuration cache
 
 Most of the OpenID Connect endpoints and configuration (e.g. signing keys, etc.) are obtained from the OpenID Connect configuration endpoint. These values are cached for one hour, but can always be forced to re-load by adding `aadsso_reload_openid_config=1` to the query string in the login page. (This shouldn't really be needed, but it has shown to be useful during development.)
+
+
+### Editing the Settings
+
+Please be cautious in editing the settings.php file according to previous readme versions. Conflicts between console settings and file settings can brick access to your WordPress instance.
